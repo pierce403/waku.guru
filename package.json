@@ -1,0 +1,31 @@
+{
+  "name": "waku.guru",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "license": "Apache-2.0",
+  "description": "A browser explorer for RAILGUN broadcaster relays advertising over Waku.",
+  "packageManager": "pnpm@11.1.0",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "typecheck": "tsc -b"
+  },
+  "dependencies": {
+    "@waku/sdk": "0.0.36",
+    "lucide-react": "1.17.0",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "viem": "2.45.2"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.2",
+    "@types/react": "19.2.16",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.2",
+    "typescript": "6.0.3",
+    "vite": "8.0.16",
+    "vite-plugin-node-polyfills": "0.28.0"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "waku.guru",
+  "short_name": "waku.guru",
+  "description": "Explore currently advertising RAILGUN broadcaster relays over Waku.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f6f7f4",
+  "theme_color": "#101414",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "64x64",
+      "type": "image/svg+xml"
+    }
+  ]
+}
