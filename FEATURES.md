@@ -1,7 +1,7 @@
 ---
 version: 1.0.0
 last_updated: 2026-06-06
-stable: 4
+stable: 5
 in_progress: 3
 planned: 3
 ---
@@ -163,3 +163,18 @@ Status, and encrypted communication/storage coordination.
   - [x] `dig waku.guru` returns GitHub Pages-compatible DNS.
   - [x] GitHub Pages API reports `cname: waku.guru`.
   - [x] `https://waku.guru/` returns HTTP 200 and loads JS/CSS assets.
+
+### Open Graph Preview Card
+
+- **Stability**: stable
+- **Description**: Provides a 1200x630 social preview image for link unfurls.
+- **Properties**:
+  - HTML includes Open Graph and Twitter summary-card metadata.
+  - `og:image` points to an absolute HTTPS PNG URL.
+  - The preview image has explicit 1200x630 dimensions and descriptive alt text.
+  - The SVG source is kept in `public/og-image.svg`.
+- **Test Criteria**:
+  - [x] `https://waku.guru/og-image.png` returns HTTP 200.
+  - [x] Root HTML contains `og:image`, `og:image:width`, `og:image:height`, and
+    `twitter:card`.
+  - [x] Generated PNG is 1200x630.

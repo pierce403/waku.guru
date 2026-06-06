@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">waku.guru Open Graph preview</title>
+  <desc id="desc">A preview card for waku.guru, a Waku relay and content-topic explorer.</desc>
+  <rect width="1200" height="630" fill="#101414"/>
+  <path d="M0 76h1200M0 152h1200M0 228h1200M0 304h1200M0 380h1200M0 456h1200M0 532h1200M104 0v630M208 0v630M312 0v630M416 0v630M520 0v630M624 0v630M728 0v630M832 0v630M936 0v630M1040 0v630" stroke="#26302c" stroke-width="1"/>
+  <rect x="56" y="52" width="1088" height="526" rx="28" fill="#f6f7f4"/>
+  <rect x="82" y="78" width="1036" height="474" rx="20" fill="#101414"/>
+  <path d="M132 484C264 404 383 442 500 352C629 253 724 288 810 352C890 412 968 378 1064 288" fill="none" stroke="#31c48d" stroke-width="5" stroke-linecap="round" opacity=".46"/>
+  <path d="M178 218C318 270 430 258 548 336C671 417 770 428 920 338C978 304 1021 304 1072 326" fill="none" stroke="#5aa7ff" stroke-width="4" stroke-linecap="round" opacity=".38"/>
+  <path d="M240 500C395 494 522 458 640 382C750 311 850 224 1030 184" fill="none" stroke="#f59e0b" stroke-width="4" stroke-linecap="round" opacity=".42"/>
+  <g fill="#101414" stroke="#f6f7f4" stroke-width="5" opacity=".82">
+    <circle cx="132" cy="484" r="16"/>
+    <circle cx="500" cy="352" r="16"/>
+    <circle cx="810" cy="352" r="16"/>
+    <circle cx="1064" cy="288" r="16"/>
+    <circle cx="178" cy="218" r="13"/>
+    <circle cx="548" cy="336" r="13"/>
+    <circle cx="920" cy="338" r="13"/>
+    <circle cx="240" cy="500" r="13"/>
+    <circle cx="640" cy="382" r="13"/>
+    <circle cx="1030" cy="184" r="13"/>
+  </g>
+  <g font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif">
+    <rect x="112" y="112" width="104" height="104" rx="18" fill="#f6f7f4"/>
+    <circle cx="164" cy="164" r="11" fill="#101414"/>
+    <circle cx="134" cy="136" r="8" fill="#31c48d"/>
+    <circle cx="194" cy="136" r="8" fill="#5aa7ff"/>
+    <circle cx="194" cy="196" r="8" fill="#f59e0b"/>
+    <circle cx="134" cy="196" r="8" fill="#f43f5e"/>
+    <path d="M140 141l26 23 28-27M140 191l26-27 28 28" fill="none" stroke="#101414" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="246" y="154" fill="#f6f7f4" font-size="38" font-weight="800" letter-spacing="0">waku.guru</text>
+    <text x="246" y="194" fill="#aab5b0" font-size="24" font-weight="650" letter-spacing="0">Waku relay and content-topic explorer</text>
+    <text x="112" y="300" fill="#f6f7f4" font-size="70" font-weight="900" letter-spacing="0">Explore Waku relays</text>
+    <text x="112" y="356" fill="#d6ddd9" font-size="29" font-weight="650" letter-spacing="0">RAILGUN broadcasters · ERC-4337 probes</text>
+    <text x="112" y="398" fill="#d6ddd9" font-size="29" font-weight="650" letter-spacing="0">service capabilities · custom content topics</text>
+  </g>
+  <g font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="22" font-weight="800">
+    <rect x="112" y="438" width="154" height="56" rx="12" fill="#dff7ea"/>
+    <text x="137" y="473" fill="#0e6d4d">Filter</text>
+    <rect x="282" y="438" width="144" height="56" rx="12" fill="#dbeafe"/>
+    <text x="317" y="473" fill="#305d91">Store</text>
+    <rect x="442" y="438" width="198" height="56" rx="12" fill="#fff3c6"/>
+    <text x="472" y="473" fill="#8a4f00">Light Push</text>
+    <rect x="656" y="438" width="226" height="56" rx="12" fill="#ffe4e6"/>
+    <text x="686" y="473" fill="#9f1239">Peer Exchange</text>
+  </g>
+  <g font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif">
+    <rect x="840" y="112" width="224" height="66" rx="14" fill="#f6f7f4"/>
+    <text x="866" y="153" fill="#101414" font-size="24" font-weight="900" letter-spacing="0">waku.guru</text>
+    <rect x="870" y="210" width="226" height="114" rx="16" fill="#f6f7f4"/>
+    <text x="898" y="252" fill="#101414" font-size="22" font-weight="900" letter-spacing="0">Parsed</text>
+    <text x="898" y="291" fill="#56615d" font-size="21" font-weight="700" letter-spacing="0">RAILGUN fee ads</text>
+    <rect x="902" y="354" width="198" height="110" rx="16" fill="#f6f7f4"/>
+    <text x="930" y="396" fill="#101414" font-size="22" font-weight="900" letter-spacing="0">Watchlist</text>
+    <text x="930" y="435" fill="#56615d" font-size="21" font-weight="700" letter-spacing="0">ERC-4337 relays</text>
+  </g>
+</svg>

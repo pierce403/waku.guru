@@ -56,6 +56,12 @@ This repo is designed for classic GitHub Pages branch publishing:
 
 The committed `docs/CNAME` configures the custom domain `waku.guru`.
 
+## Social Preview
+
+The Open Graph preview card is generated from `public/og-image.svg` and served
+as `https://waku.guru/og-image.png`. The root HTML includes Open Graph and
+Twitter summary-card metadata with explicit image dimensions.
+
 ## Waku Defaults
 
 Default public RAILGUN broadcaster topic:

@@ -34,6 +34,7 @@ Important paths:
 - `src/lib/relaySummary.ts`: groups raw ads into relay capability summaries.
 - `src/App.tsx`: operator UI, filters, topology view, and detail panes.
 - `FEATURES.md`: living feature requirements and acceptance criteria.
+- `public/og-image.svg`: source for the generated Open Graph preview.
 - `docs/`: generated static build committed for GitHub Pages.
 
 ## Build And Test Commands
@@ -66,6 +67,8 @@ pnpm preview
 - `asn1.js` references Node `vm`; keep `src/shims/vm.ts` aliased in Vite.
 - The production JS bundle is large because Waku/libp2p ships substantial
   browser code. A chunk-size warning is expected for now.
+- Regenerate `public/og-image.png` from `public/og-image.svg` with headless
+  Chrome/Chromium when changing the social preview.
 - `waku.guru` is configured as the Pages custom domain. Keep Vite asset paths
   relative unless there is a strong reason to privilege only one host.
 - ERC-4337 is not currently implemented as a parsed Waku relay schema here.
