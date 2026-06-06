@@ -36,6 +36,20 @@ export type WakuPeerSnapshot = {
   };
 };
 
+export type ObservedTopicSample = {
+  receivedAt: number | null;
+  payloadBytes: number;
+  utf8Preview: string | null;
+  jsonPreview: unknown | null;
+};
+
+export type ObservedTopicSnapshot = {
+  contentTopic: string;
+  messagesObserved: number;
+  lastSeenAt: number | null;
+  samples: ObservedTopicSample[];
+};
+
 export type WakuRelayScanResult = {
   createdAt: string;
   elapsedMs: number;
@@ -53,6 +67,8 @@ export type WakuRelayScanResult = {
     lightPush: ProtocolReadiness;
     store: ProtocolReadiness;
   };
+  observedTopics: ObservedTopicSnapshot[];
+  totalMessagesObserved: number;
   rawFeeMessagesObserved: number;
   rawFeeAdsParsed: number;
   rawFeeAdParseErrors: string[];
@@ -63,6 +79,7 @@ export type WakuRelayScanResult = {
 
 export type WakuRelayScanOptions = {
   pubsubTopic: string;
+  contentTopics?: string[];
   directPeers: string[];
   timeoutMs?: number;
   historyLookbackMs?: number;
@@ -77,6 +94,7 @@ export type WakuRelayScanHooks = {
 type PeerLike = Awaited<ReturnType<LightNode["getConnectedPeers"]>>[number];
 
 const textDecoder = new TextDecoder();
+const maxSamplesPerTopic = 3;
 
 export const parseRailgunWakuPubSubTopic = (pubsubTopic: string): IRoutingInfo => {
   const match = /^\/waku\/2\/rs\/(\d+)\/(\d+)$/.exec(pubsubTopic.trim());
@@ -122,6 +140,27 @@ const makeWakuMessage = (decoded: IDecodedMessage): RawRailgunWakuMessage => ({
   contentTopic: decoded.contentTopic,
   timestamp: decoded.timestamp ? decoded.timestamp.getTime() : undefined
 });
+
+const bytesToUtf8Preview = (bytes: Uint8Array): string | null => {
+  try {
+    const text = textDecoder.decode(bytes);
+    return text.length > 220 ? `${text.slice(0, 220)}...` : text;
+  } catch {
+    return null;
+  }
+};
+
+const tryParseJson = (value: string | null): unknown | null => {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return null;
+  }
+};
 
 const abortIfNeeded = (signal?: AbortSignal): void => {
   if (signal?.aborted) {
@@ -201,13 +240,27 @@ const stopNode = async (node: LightNode | null): Promise<void> => {
 };
 
 export const blankScanResult = ({
+  contentTopics = [RAILGUN_MAINNET_WAKU_FEES_TOPIC],
   directPeers,
   pubsubTopic
 }: {
+  contentTopics?: string[];
   directPeers: string[];
   pubsubTopic: string;
 }): WakuRelayScanResult => {
-  const routingInfo = parseRailgunWakuPubSubTopic(pubsubTopic);
+  let routingInfo: IRoutingInfo;
+  let error: string | null = null;
+
+  try {
+    routingInfo = parseRailgunWakuPubSubTopic(pubsubTopic);
+  } catch (parseError) {
+    routingInfo = {
+      clusterId: 0,
+      shardId: 0,
+      pubsubTopic
+    };
+    error = parseError instanceof Error ? parseError.message : String(parseError);
+  }
 
   return {
     createdAt: new Date().toISOString(),
@@ -226,6 +279,13 @@ export const blankScanResult = ({
       lightPush: "missing",
       store: "missing"
     },
+    observedTopics: contentTopics.map((contentTopic) => ({
+      contentTopic,
+      messagesObserved: 0,
+      lastSeenAt: null,
+      samples: []
+    })),
+    totalMessagesObserved: 0,
     rawFeeMessagesObserved: 0,
     rawFeeAdsParsed: 0,
     rawFeeAdParseErrors: [],
@@ -235,7 +295,7 @@ export const blankScanResult = ({
       "No proof was generated.",
       "Waku DNS discovery is disabled; only the visible direct peers are dialed before peer exchange/cache."
     ],
-    error: null
+    error
   };
 };
 
@@ -249,9 +309,31 @@ export const scanWakuRelays = async (
     options.historyLookbackMs ?? DEFAULT_HISTORY_LOOKBACK_MS;
   const directPeers = options.directPeers.map((peer) => peer.trim()).filter(Boolean);
   const routingInfo = parseRailgunWakuPubSubTopic(options.pubsubTopic);
+  const contentTopics = Array.from(
+    new Set(
+      (options.contentTopics?.length
+        ? options.contentTopics
+        : [RAILGUN_MAINNET_WAKU_FEES_TOPIC]
+      )
+        .map((topic) => topic.trim())
+        .filter(Boolean)
+    )
+  );
   const deadline = startedAt + timeoutMs;
   const feeAds = new Map<string, RailgunBroadcasterFeeAd>();
+  const observedTopicMap = new Map<string, ObservedTopicSnapshot>(
+    contentTopics.map((contentTopic) => [
+      contentTopic,
+      {
+        contentTopic,
+        messagesObserved: 0,
+        lastSeenAt: null,
+        samples: []
+      }
+    ])
+  );
   const parseErrors: string[] = [];
+  let totalMessagesObserved = 0;
   let rawFeeMessagesObserved = 0;
   let node: LightNode | null = null;
 
@@ -289,6 +371,8 @@ export const scanWakuRelays = async (
         lightPush: protocolReadiness(peers, "lightPush"),
         store: protocolReadiness(peers, "store")
       },
+      observedTopics: Array.from(observedTopicMap.values()),
+      totalMessagesObserved,
       rawFeeMessagesObserved,
       rawFeeAdsParsed: feeAds.size,
       rawFeeAdParseErrors: parseErrors.slice(-20),
@@ -308,7 +392,36 @@ export const scanWakuRelays = async (
   };
 
   const observe = (decoded: IDecodedMessage): void => {
-    const parsed = parseRailgunWakuFeeMessage(makeWakuMessage(decoded));
+    const message = makeWakuMessage(decoded);
+    const topicSnapshot = observedTopicMap.get(message.contentTopic);
+
+    totalMessagesObserved += 1;
+
+    if (topicSnapshot) {
+      const payload =
+        decoded.payload instanceof Uint8Array
+          ? decoded.payload
+          : Uint8Array.from(decoded.payload);
+      const utf8Preview = bytesToUtf8Preview(payload);
+
+      topicSnapshot.messagesObserved += 1;
+      topicSnapshot.lastSeenAt = message.timestamp ?? Date.now();
+
+      if (topicSnapshot.samples.length < maxSamplesPerTopic) {
+        topicSnapshot.samples.push({
+          receivedAt: message.timestamp ?? null,
+          payloadBytes: payload.byteLength,
+          utf8Preview,
+          jsonPreview: tryParseJson(utf8Preview)
+        });
+      }
+    }
+
+    if (message.contentTopic !== RAILGUN_MAINNET_WAKU_FEES_TOPIC) {
+      return;
+    }
+
+    const parsed = parseRailgunWakuFeeMessage(message);
 
     if (!parsed.ok) {
       if (!parsed.error.startsWith("wrong content topic")) {
@@ -344,17 +457,19 @@ export const scanWakuRelays = async (
     );
     await emitProgress();
 
-    const decoder = createDecoder(RAILGUN_MAINNET_WAKU_FEES_TOPIC, routingInfo);
+    const decoders = contentTopics.map((contentTopic) =>
+      createDecoder(contentTopic, routingInfo)
+    );
 
-    emitLog("Subscribing to live fee advertisements.");
-    await node.filter?.subscribe([decoder], observe);
+    emitLog(`Subscribing to ${contentTopics.length} content topic(s).`);
+    await node.filter?.subscribe(decoders, observe);
 
     if (node.store && Date.now() < deadline) {
       emitLog("Querying Waku Store history.");
-      const generator = node.store.queryGenerator([decoder], {
+      const generator = node.store.queryGenerator(decoders, {
         includeData: true,
         pubsubTopic: routingInfo.pubsubTopic,
-        contentTopics: [RAILGUN_MAINNET_WAKU_FEES_TOPIC],
+        contentTopics,
         paginationForward: true,
         timeStart: new Date(Date.now() - historyLookbackMs),
         timeEnd: new Date()

@@ -1,13 +1,17 @@
 import {
   AlertTriangle,
   BadgeCheck,
+  BookOpen,
   Clock,
   Copy,
   Layers,
+  Network,
   Play,
   RadioTower,
   RotateCcw,
   Search,
+  Server,
+  Shield,
   SlidersHorizontal,
   Square,
   Wifi
@@ -18,7 +22,10 @@ import {
   DEFAULT_DIRECT_PEERS,
   DEFAULT_HISTORY_LOOKBACK_MS,
   DEFAULT_PUBSUB_TOPIC,
-  DEFAULT_SCAN_TIMEOUT_MS
+  DEFAULT_SCAN_TIMEOUT_MS,
+  EXPLORATION_TARGETS,
+  RAILGUN_MAINNET_WAKU_FEES_TOPIC,
+  type ExplorationTarget
 } from "./lib/defaults";
 import {
   formatDuration,
@@ -31,17 +38,22 @@ import { type RelayStatus, type RelaySummary } from "./lib/relaySummary";
 import {
   blankScanResult,
   scanWakuRelays,
+  type ObservedTopicSnapshot,
   type WakuPeerSnapshot,
   type WakuRelayScanResult
 } from "./lib/wakuScan";
 
 type SourceFilter = "all" | RelayStatus;
 
-const parsePeers = (value: string): string[] =>
+const parseLines = (value: string): string[] =>
   value
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean);
+
+const targetById = new Map<string, ExplorationTarget>(
+  EXPLORATION_TARGETS.map((target) => [target.id, target])
+);
 
 const statusLabel = (status: RelayStatus): string => {
   switch (status) {
@@ -73,7 +85,14 @@ const copyText = (value: string): void => {
 };
 
 function App() {
-  const [topic, setTopic] = useState(DEFAULT_PUBSUB_TOPIC);
+  const defaultTarget = EXPLORATION_TARGETS[0];
+  const [selectedTargetId, setSelectedTargetId] = useState<string>(
+    defaultTarget.id
+  );
+  const [topic, setTopic] = useState<string>(defaultTarget.pubsubTopic);
+  const [contentTopicsText, setContentTopicsText] = useState(
+    defaultTarget.contentTopics.join("\n")
+  );
   const [peersText, setPeersText] = useState(DEFAULT_DIRECT_PEERS.join("\n"));
   const [timeoutMs, setTimeoutMs] = useState(DEFAULT_SCAN_TIMEOUT_MS);
   const [lookbackMs, setLookbackMs] = useState(DEFAULT_HISTORY_LOOKBACK_MS);
@@ -86,8 +105,20 @@ function App() {
   const [selectedRelayId, setSelectedRelayId] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  const directPeers = useMemo(() => parsePeers(peersText), [peersText]);
-  const currentResult = result ?? blankScanResult({ directPeers, pubsubTopic: topic });
+  const selectedTarget =
+    targetById.get(selectedTargetId) ?? EXPLORATION_TARGETS[0];
+  const directPeers = useMemo(() => parseLines(peersText), [peersText]);
+  const contentTopics = useMemo(
+    () => parseLines(contentTopicsText),
+    [contentTopicsText]
+  );
+  const currentResult =
+    result ??
+    blankScanResult({
+      contentTopics,
+      directPeers,
+      pubsubTopic: topic
+    });
 
   const tokenOptions = useMemo(() => {
     const symbols = new Set<string>();
@@ -141,6 +172,7 @@ function App() {
     );
 
     return {
+      messages: currentResult.totalMessagesObserved,
       usable,
       versions: versions.size,
       peers: currentResult.connectedPeers.length,
@@ -160,6 +192,17 @@ function App() {
     );
   };
 
+  const applyTarget = (target: ExplorationTarget): void => {
+    setSelectedTargetId(target.id);
+    setTopic(target.pubsubTopic);
+    setContentTopicsText(target.contentTopics.join("\n"));
+    setResult(null);
+    setSelectedRelayId(null);
+    setQuery("");
+    setTokenFilter("all");
+    setSourceFilter("all");
+  };
+
   const startScan = async (): Promise<void> => {
     abortRef.current?.abort();
     const controller = new AbortController();
@@ -168,24 +211,38 @@ function App() {
     setLogs([]);
     appendLog("Scan requested.");
 
-    const finalResult = await scanWakuRelays(
-      {
-        pubsubTopic: topic,
-        directPeers,
-        timeoutMs,
-        historyLookbackMs: lookbackMs,
-        signal: controller.signal
-      },
-      {
-        onLog: appendLog,
-        onProgress: setResult
-      }
-    );
+    try {
+      const finalResult = await scanWakuRelays(
+        {
+          pubsubTopic: topic,
+          contentTopics,
+          directPeers,
+          timeoutMs,
+          historyLookbackMs: lookbackMs,
+          signal: controller.signal
+        },
+        {
+          onLog: appendLog,
+          onProgress: setResult
+        }
+      );
 
-    setResult(finalResult);
-    setSelectedRelayId(finalResult.relays[0]?.id ?? null);
-    setScanning(false);
-    abortRef.current = null;
+      setResult(finalResult);
+      setSelectedRelayId(finalResult.relays[0]?.id ?? null);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      appendLog(message);
+      setResult(
+        blankScanResult({
+          contentTopics,
+          directPeers,
+          pubsubTopic: topic
+        })
+      );
+    } finally {
+      setScanning(false);
+      abortRef.current = null;
+    }
   };
 
   const stopScan = (): void => {
@@ -195,7 +252,10 @@ function App() {
 
   const resetInputs = (): void => {
     abortRef.current?.abort();
+    const target = EXPLORATION_TARGETS[0];
+    setSelectedTargetId(target.id);
     setTopic(DEFAULT_PUBSUB_TOPIC);
+    setContentTopicsText(RAILGUN_MAINNET_WAKU_FEES_TOPIC);
     setPeersText(DEFAULT_DIRECT_PEERS.join("\n"));
     setTimeoutMs(DEFAULT_SCAN_TIMEOUT_MS);
     setLookbackMs(DEFAULT_HISTORY_LOOKBACK_MS);
@@ -217,7 +277,7 @@ function App() {
           </span>
           <div>
             <h1>waku.guru</h1>
-            <p>RAILGUN broadcaster relay explorer</p>
+            <p>Waku relay, service, and content-topic explorer</p>
           </div>
         </div>
         <div className="run-state" data-active={scanning}>
@@ -225,6 +285,22 @@ function App() {
           {scanning ? "scanning" : result ? "scan complete" : "idle"}
         </div>
       </header>
+
+      <section className="target-grid" aria-label="Exploration targets">
+        {EXPLORATION_TARGETS.map((target) => (
+          <button
+            key={target.id}
+            className="target-card"
+            data-selected={target.id === selectedTarget.id}
+            type="button"
+            onClick={() => applyTarget(target)}
+          >
+            <span className={`target-kind ${target.category}`}>{target.category}</span>
+            <strong>{target.label}</strong>
+            <span>{target.description}</span>
+          </button>
+        ))}
+      </section>
 
       <section className="control-band" aria-label="Scan controls">
         <label className="field topic-field">
@@ -275,17 +351,32 @@ function App() {
             onChange={(event) => setPeersText(event.target.value)}
           />
         </label>
+        <label className="field content-field">
+          <span>Content topics</span>
+          <textarea
+            rows={3}
+            value={contentTopicsText}
+            onChange={(event) => setContentTopicsText(event.target.value)}
+          />
+        </label>
       </section>
 
       <section className="metric-grid" aria-label="Scan summary">
         <Metric icon={<Wifi size={19} />} label="Waku peers" value={summary.peers} />
-        <Metric icon={<Layers size={19} />} label="Fee ads" value={summary.parsed} />
+        <Metric icon={<Layers size={19} />} label="Messages" value={summary.messages} />
+        <Metric icon={<Server size={19} />} label="Fee ads" value={summary.parsed} />
         <Metric
           icon={<BadgeCheck size={19} />}
           label="Usable relays"
           value={summary.usable}
         />
         <Metric icon={<Clock size={19} />} label="Versions" value={summary.versions} />
+      </section>
+
+      <section className="insight-band" aria-label="Capability guide">
+        <CapabilityGuide target={selectedTarget} />
+        <ObservedTopics topics={currentResult.observedTopics} />
+        <ResearchRadar />
       </section>
 
       <section className="workspace">
@@ -308,7 +399,7 @@ function App() {
 
         <section className="panel relay-browser" aria-label="Relay browser">
           <div className="browser-head">
-            <PanelTitle icon={<SlidersHorizontal size={18} />} title="Relays" />
+            <PanelTitle icon={<SlidersHorizontal size={18} />} title="Parsed relays" />
             <span className="muted">
               {filteredRelays.length} of {currentResult.relays.length}
             </span>
@@ -396,6 +487,133 @@ function Metric({
       <span>{label}</span>
       <strong>{value}</strong>
     </div>
+  );
+}
+
+function CapabilityGuide({ target }: { target: ExplorationTarget }) {
+  return (
+    <section className="panel capability-panel" aria-label="Waku capabilities">
+      <PanelTitle icon={<Network size={18} />} title="Capabilities" />
+      <div className="capability-chips">
+        {target.capabilities.map((capability) => (
+          <span key={capability}>{capability}</span>
+        ))}
+      </div>
+      <div className="protocol-guide">
+        <span>
+          <strong>Filter</strong>
+          selective topic subscriptions
+        </span>
+        <span>
+          <strong>Store</strong>
+          historical message retrieval
+        </span>
+        <span>
+          <strong>Light Push</strong>
+          low-bandwidth publication path
+        </span>
+        <span>
+          <strong>Peer Exchange</strong>
+          extra peer discovery after bootstrap
+        </span>
+      </div>
+    </section>
+  );
+}
+
+function ObservedTopics({ topics }: { topics: ObservedTopicSnapshot[] }) {
+  return (
+    <section className="panel observed-panel" aria-label="Observed content topics">
+      <PanelTitle icon={<BookOpen size={18} />} title="Topics" />
+      <div className="topic-list">
+        {topics.map((topic) => (
+          <article key={topic.contentTopic} className="topic-row">
+            <div>
+              <strong>{topic.contentTopic}</strong>
+              <span>{topic.messagesObserved} message(s)</span>
+            </div>
+            <span>{formatTimeDelta(topic.lastSeenAt)}</span>
+          </article>
+        ))}
+      </div>
+      <TopicSamples topics={topics} />
+    </section>
+  );
+}
+
+function TopicSamples({ topics }: { topics: ObservedTopicSnapshot[] }) {
+  const samples = topics.flatMap((topic) =>
+    topic.samples.map((sample, index) => ({
+      ...sample,
+      key: `${topic.contentTopic}:${index}`,
+      contentTopic: topic.contentTopic
+    }))
+  );
+
+  if (samples.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="sample-list">
+      {samples.slice(0, 3).map((sample) => (
+        <details key={sample.key}>
+          <summary>
+            {shortMiddle(sample.contentTopic, 18, 10)} · {sample.payloadBytes} bytes
+          </summary>
+          <pre>
+            {sample.jsonPreview
+              ? JSON.stringify(sample.jsonPreview, null, 2)
+              : sample.utf8Preview ?? "binary payload"}
+          </pre>
+        </details>
+      ))}
+    </div>
+  );
+}
+
+function ResearchRadar() {
+  const items = [
+    {
+      label: "RAILGUN",
+      status: "parsed",
+      detail: "broadcaster fee ads and relay adapter capabilities"
+    },
+    {
+      label: "ERC-4337",
+      status: "watchlist",
+      detail: "UserOps, bundlers, paymasters, EntryPoint versions"
+    },
+    {
+      label: "Graphcast",
+      status: "candidate",
+      detail: "indexer coordination and signed network messages"
+    },
+    {
+      label: "Status",
+      status: "candidate",
+      detail: "privacy-preserving chat and community messaging"
+    },
+    {
+      label: "TACo / Codex",
+      status: "candidate",
+      detail: "encrypted messaging plus durable storage coordination"
+    }
+  ];
+
+  return (
+    <section className="panel radar-panel" aria-label="Research radar">
+      <PanelTitle icon={<Shield size={18} />} title="Radar" />
+      <div className="radar-list">
+        {items.map((item) => (
+          <article key={item.label}>
+            <span>{item.status}</span>
+            <strong>{item.label}</strong>
+            <p>{item.detail}</p>
+          </article>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -500,6 +718,7 @@ function PeerList({ peers }: { peers: WakuPeerSnapshot[] }) {
             <span data-ready={peer.capabilities.filter}>Filter</span>
             <span data-ready={peer.capabilities.lightPush}>LightPush</span>
             <span data-ready={peer.capabilities.store}>Store</span>
+            <span data-ready={peer.capabilities.relay}>Relay</span>
           </div>
         </article>
       ))}
@@ -517,7 +736,7 @@ function RelayList({
   onSelect: (id: string) => void;
 }) {
   if (relays.length === 0) {
-    return <p className="empty">No relays match the current view.</p>;
+    return <p className="empty">No parsed relays match the current view.</p>;
   }
 
   return (
@@ -547,7 +766,7 @@ function RelayList({
 
 function RelayDetails({ relay }: { relay: RelaySummary | null }) {
   if (!relay) {
-    return <p className="empty detail-empty">Select a relay candidate.</p>;
+    return <p className="empty detail-empty">No parsed relay selected.</p>;
   }
 
   return (

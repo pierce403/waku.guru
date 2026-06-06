@@ -1,7 +1,7 @@
 # waku.guru
 
-A static TypeScript webapp for exploring RAILGUN broadcaster relays that are
-currently advertising over Waku.
+A static TypeScript webapp for exploring Waku network services and
+application-level relays that are currently advertising over Waku.
 
 The scanner follows the Waku relay discovery shape used in `../bindle`:
 
@@ -10,12 +10,29 @@ The scanner follows the Waku relay discovery shape used in `../bindle`:
 - keeps SDK DNS discovery disabled
 - uses peer exchange/cache after connecting
 - waits for Filter, LightPush, and Store peers
-- reads current and recent `/railgun/v2/0-1-fees/json` advertisements
+- reads selected content topics through Filter and Store
 - parses broadcaster versions, fee tokens, expiry, reliability, relay adapters,
   POI list requirements, and available wallet counts
+- reports generic message counts for topics without a known parser
 
 It does not create proofs, sign transactions, submit private operations, call a
 bundler, contact Pimlico, or use a wallet.
+
+## Live Site
+
+GitHub Pages is live at:
+
+```text
+https://pierce403.github.io/waku.guru/
+```
+
+The custom domain is configured as:
+
+```text
+https://waku.guru/
+```
+
+The build uses relative asset paths so the fallback GitHub Pages URL also works.
 
 ## Development
 
@@ -35,10 +52,9 @@ This repo is designed for classic GitHub Pages branch publishing:
 
 - branch: `main`
 - folder: `/docs`
-- Vite base path: `/waku.guru/`
+- Vite base path: `./`
 
-For a future custom domain, set `WAKU_GURU_BASE_PATH=/` during build and add a
-`CNAME` only after DNS for `waku.guru` points at GitHub Pages.
+The committed `docs/CNAME` configures the custom domain `waku.guru`.
 
 ## Waku Defaults
 
@@ -61,3 +77,26 @@ Default direct peers:
 The app intentionally reports raw Waku fee advertisements. It does not evaluate
 Kohaku `JsBroadcasterManager` selection, because this explorer is only a
 read-only relay map.
+
+## Research Notes
+
+- Waku exposes modular protocols: Relay/RLN Relay, Filter, Store, Light Push,
+  and Waku Message metadata.
+- The public Waku Network is open-access, privacy-preserving, sharded, and
+  provides services for resource-restricted nodes.
+- Node operators can enable or advertise services such as relay, store, filter,
+  lightpush, peer exchange, websocket, REST, metrics, and request-rate limits.
+- ERC-4337 standardizes UserOperations, bundlers, paymasters, EntryPoint, and an
+  alternative mempool, but this repo has not found an official Waku topic schema
+  for ERC-4337 relay discovery. Current ERC-4337 topics in the app are probes.
+- Interesting future exploration targets include Graphcast, Status messaging,
+  and Waku/TACo/Codex-style encrypted communication plus durable storage flows.
+
+Sources:
+
+- https://docs.waku.org/learn/
+- https://docs.waku.org/learn/concepts/protocols/
+- https://docs.waku.org/run-node/config-options
+- https://docs.erc4337.io/bundlers/userop-mempool-overview.html
+- https://docs.erc4337.io/resources/faqs.html
+- https://blog.waku.org/waku-x-taco-p2p-comms-with-decentralised-encryption/

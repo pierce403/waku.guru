@@ -18,6 +18,7 @@ issues, collaborator preferences, or mistakes future agents should avoid.
   submission, no bundler/paymaster/Pimlico calls.
 - Keep default peers, topics, and fee-ad parsing aligned with the known working
   Waku discovery path in `../bindle`.
+- Keep `FEATURES.md` current when adding or changing product behavior.
 - Keep deployment notes current when GitHub Pages settings or DNS changes.
 
 ## Project Overview
@@ -32,6 +33,7 @@ Important paths:
 - `src/lib/wakuFeeAds.ts`: validates and normalizes RAILGUN fee ads.
 - `src/lib/relaySummary.ts`: groups raw ads into relay capability summaries.
 - `src/App.tsx`: operator UI, filters, topology view, and detail panes.
+- `FEATURES.md`: living feature requirements and acceptance criteria.
 - `docs/`: generated static build committed for GitHub Pages.
 
 ## Build And Test Commands
@@ -64,8 +66,11 @@ pnpm preview
 - `asn1.js` references Node `vm`; keep `src/shims/vm.ts` aliased in Vite.
 - The production JS bundle is large because Waku/libp2p ships substantial
   browser code. A chunk-size warning is expected for now.
-- `waku.guru` DNS did not resolve during initial setup on June 6, 2026, so do
-  not add a `CNAME` until DNS points at GitHub Pages.
+- `waku.guru` is configured as the Pages custom domain. Keep Vite asset paths
+  relative unless there is a strong reason to privilege only one host.
+- ERC-4337 is not currently implemented as a parsed Waku relay schema here.
+  Treat bundled candidate content topics as probes unless a real standard or
+  observed schema is verified.
 
 ## Deployment Notes
 
@@ -74,6 +79,5 @@ GitHub Pages should publish from:
 - branch: `main`
 - path: `/docs`
 
-The default Vite base is `/waku.guru/`, matching the standard repo Pages URL.
-For a verified custom domain, build with `WAKU_GURU_BASE_PATH=/` and then add
-the domain in Pages settings.
+The default Vite base is `./`, which lets both `https://waku.guru/` and the
+fallback repo Pages URL load the same generated assets.

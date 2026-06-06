@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 
 export default defineConfig({
-  base: process.env.WAKU_GURU_BASE_PATH ?? "/waku.guru/",
+  base: process.env.WAKU_GURU_BASE_PATH ?? "./",
   resolve: {
     alias: {
       vm: new URL("./src/shims/vm.ts", import.meta.url).pathname
