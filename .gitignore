@@ -5,3 +5,6 @@ dist/
 *.tsbuildinfo
 coverage/
 playwright-report/
+
+.wrangler/
+dist/

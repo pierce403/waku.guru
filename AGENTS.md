@@ -84,3 +84,11 @@ GitHub Pages should publish from:
 
 The default Vite base is `./`, which lets both `https://waku.guru/` and the
 fallback repo Pages URL load the same generated assets.
+
+## Cloudflare static hosting
+
+Production uses native main builds with corepack pnpm install --frozen-lockfile,
+corepack pnpm run build:cloudflare and npm run deploy. check:deploy validates the
+static build and Worker dry run. Original Pages output is retained. Zone request
+metrics are used without browser analytics; no automatic wallet or scan activity
+is added. Credentials remain in Cloudflare and previews stay off.

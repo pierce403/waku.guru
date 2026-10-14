@@ -178,3 +178,11 @@ Status, and encrypted communication/storage coordination.
   - [x] Root HTML contains `og:image`, `og:image:width`, `og:image:height`, and
     `twitter:card`.
   - [x] Generated PNG is 1200x630.
+
+### Native Cloudflare hosting
+
+- **Stability**: in-progress
+- **Description**: Native main hosting with zone request metrics and no browser analytics.
+- **Test Criteria**:
+  - [ ] Locked install, type checks and static Worker dry run pass.
+  - [ ] Exact native version, HTTPS, public files, browser and request metrics pass.

@@ -106,3 +106,11 @@ Sources:
 - https://docs.erc4337.io/bundlers/userop-mempool-overview.html
 - https://docs.erc4337.io/resources/faqs.html
 - https://blog.waku.org/waku-x-taco-p2p-comms-with-decentralised-encryption/
+
+## Cloudflare hosting
+
+Native Git publishes main with the pinned pnpm lockfile and build:cloudflare,
+then npm run deploy. Original build and Pages recovery are retained. Credentials
+stay in Cloudflare; previews are disabled. Browser analytics are not injected;
+Cloudflare zone request/status metrics provide hosting usage. Wallet, passkey,
+cryptography and user-triggered network behavior are unchanged.
