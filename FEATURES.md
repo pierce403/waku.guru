@@ -1,7 +1,7 @@
 ---
 version: 1.0.0
 last_updated: 2026-06-06
-stable: 5
+stable: 6
 in_progress: 3
 planned: 3
 ---
@@ -181,8 +181,8 @@ Status, and encrypted communication/storage coordination.
 
 ### Native Cloudflare hosting
 
-- **Stability**: in-progress
+- **Stability**: stable
 - **Description**: Native main hosting with zone request metrics and no browser analytics.
 - **Test Criteria**:
-  - [ ] Locked install, type checks and static Worker dry run pass.
-  - [ ] Exact native version, HTTPS, public files, browser and request metrics pass.
+  - [x] Locked install, type checks and static Worker dry run pass.
+  - [x] Exact native version, HTTPS, public files, browser and request metrics pass.

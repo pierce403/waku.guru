@@ -77,7 +77,7 @@ pnpm preview
 
 ## Deployment Notes
 
-GitHub Pages should publish from:
+Retained GitHub Pages recovery should publish from:
 
 - branch: `main`
 - path: `/docs`
